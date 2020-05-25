@@ -1,0 +1,29 @@
+/* style={'display':'flex','justifyContent':'center','flexDirection':'column'} */
+.app{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+.app > h2{
+    color: #a8a232;
+    margin-bottom: 10px;
+    align-self: center;
+}
+
+.app > .appWrapper{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: column;
+    padding: 40px;
+    width: 100%;
+    align-self: center;
+}
+p.bolder{
+    align-self: center;
+    font-weight: bolder;
+    font-size: 18px;
+}
+label{
+    margin-bottom: 15px;
+}
