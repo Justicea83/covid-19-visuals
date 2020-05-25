@@ -20,20 +20,17 @@ def getCountries():
     return data
 
 def trendByCountry(df):
-    #trace1 = go.Bar(x=df['NOC'],y=df['Gold'],name='Gold',marker=dict(color = '#FFD700'))
     trace1 = go.Bar(y=df['Date'],x=df['Cases'],name='Confirmed',orientation='h')
-    #trace2 = go.Bar(y=df['Date'],x=df['Deaths'],name='Deaths',orientation='h')
-    #trace3 = go.Bar(y=df['Date'],x=df['Recovered'],name='Recovered',orientation='h')
-    #trace4 = go.Bar(y=df['Date'],x=df['Active'],name='Active',orientation='h')
-
-
     data = [trace1]
-    # for row in forCountry.iterrows():
-    #     trace = 
-
     layout = go.Layout(title='Country Trend Analysis',xaxis=dict(title= 'Date'),yaxis=dict(title = 'Cases'),barmode='stack')
     return go.Figure(data=data,layout=layout)
     
+#create pie chart for comparison
+def createPieChart(cases,population):
+    labels = ['Cases','Population']
+    values = [cases, population]
+    return go.Figure(data=[go.Pie(labels=labels, values=values)],layout=go.Layout(title="Cases vs Population"))
+
 
 app = dash.Dash(__name__)
 app.layout = html.Div(children=[
@@ -49,27 +46,37 @@ app.layout = html.Div(children=[
     dcc.Graph(id='country-trend',
         animate=True
     ),
-    html.P('Total Percentage of People with Covid 19',id='percentage-value')
+    dcc.Graph(id='pie-chart',animate=True)
 
     ],className='appWrapper')
 ],className='app')
 
 #callbacks
 @app.callback(
-    Output(component_id='percentage-value', component_property='children'),
+    Output(component_id='pie-chart', component_property='figure'),
     [Input(component_id='country-dropdown', component_property='value')]
 )
-def update_output_div(input_value):
+def update_output_count(input_value):
     selected_country = countryDf[countryDf['Slug'] == input_value]
+    #make request to world bank api to get the population of countries
     url = "http://api.worldbank.org/v2/country/{}/indicator/SP.POP.TOTL?format=json".format(selected_country['ISO2'].iloc[0])
 
-    print(url)
+    #remove this code in the future
+    forCountry = requests.get("https://api.covid19api.com/country/{}/status/confirmed/live".format(selected_country['Slug'].iloc[0]))
+    data = json_normalize(forCountry.json())
+    maxCases = data['Cases'].max()
+
     req = requests.get(url)
+    population = 0
     
-    print(req.text)
-    #data = json_normalize(req.json())
-    #print(data[0])
-    return input_value
+    for row in req.json()[1]:
+        #print(row)
+        if row['value'] != None:
+            population = row['value']
+            break
+
+    #print(maxCases)
+    return createPieChart(maxCases,population)
 
 
 @app.callback(
@@ -80,6 +87,7 @@ def update_output_div(input_value):
    # forCountry = requests.get("https://api.covid19api.com/live/country/{}".format(input_value))
     forCountry = requests.get("https://api.covid19api.com/country/{}/status/confirmed/live".format(input_value))
     data = json_normalize(forCountry.json())
+    maxCases = data['Cases'].max()
     return trendByCountry(data)
 
 
